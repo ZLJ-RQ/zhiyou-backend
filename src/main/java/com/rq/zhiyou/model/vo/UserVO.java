@@ -26,7 +26,7 @@ public class UserVO implements Serializable {
     /**
      * 用户头像
      */
-    private String AvatarUrl;
+    private String avatarUrl;
 
 
     /**

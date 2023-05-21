@@ -9,15 +9,23 @@ import com.rq.zhiyou.mapper.TeamMapper;
 import com.rq.zhiyou.model.domain.Team;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.domain.UserTeam;
+import com.rq.zhiyou.model.dto.team.TeamJoinRequest;
+import com.rq.zhiyou.model.dto.team.TeamQueryDTO;
+import com.rq.zhiyou.model.dto.team.TeamUpdateRequest;
 import com.rq.zhiyou.model.enums.TeamStatusEnum;
+import com.rq.zhiyou.model.vo.UserTeamVO;
+import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.service.TeamService;
+import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.service.UserTeamService;
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
 import javax.annotation.Resource;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+
 
 
 /**
@@ -32,9 +40,12 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     @Resource
     private UserTeamService userTeamService;
 
+    @Resource
+    private UserService userService;
+
     @Override
     @Transactional
-    public synchronized long addTeam(Team team, User loginUser) {
+    public long addTeam(Team team, User loginUser) {
 //        1. 请求参数是否为空？
         if (team==null){
             throw new BusinessException(StatusCode.PARAMS_ERROR);
@@ -105,6 +116,158 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             throw new BusinessException(StatusCode.SYSTEM_ERROR,"创建队伍失败");
         }
         return teamId;
+    }
+
+    @Override
+    public List<UserTeamVO> listTeams(TeamQueryDTO teamQueryDto, boolean isAdmin) {
+        QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
+        if (teamQueryDto!=null){
+            Long id = teamQueryDto.getId();
+            if (id!=null&&id>0){
+                queryWrapper.eq("id",id);
+            }
+            String searchText = teamQueryDto.getSearchText();
+            if (StringUtils.isNotBlank(searchText)){
+                queryWrapper.and(qw->qw.like("name",searchText).or().like("description",searchText));
+            }
+            String name = teamQueryDto.getName();
+            if (StringUtils.isNotBlank(name)){
+                queryWrapper.like("name",name);
+            }
+            String description = teamQueryDto.getDescription();
+            if (StringUtils.isNotBlank(description)){
+                queryWrapper.like("description",description);
+            }
+            Integer maxNum = teamQueryDto.getMaxNum();
+            if (maxNum!=null&&maxNum>0){
+                queryWrapper.eq("max_num",maxNum);
+            }
+            Long userId = teamQueryDto.getUserId();
+            if (userId!=null&&userId>0){
+                queryWrapper.eq("user_id",userId);
+            }
+            Integer status = teamQueryDto.getStatus();
+            TeamStatusEnum statusEnum = TeamStatusEnum.getEnumByValue(status);
+            if (statusEnum==null){
+                statusEnum=TeamStatusEnum.PUBLIC;
+            }
+            if (!isAdmin&&!statusEnum.equals(TeamStatusEnum.PUBLIC)){
+                throw new BusinessException(StatusCode.NO_AUTH);
+            }
+            queryWrapper.eq("status",statusEnum.getValue());
+        }
+        //查询未过期的和expire_time为空的
+        queryWrapper.and(qw->qw.gt("expire_time",new Date()).or().isNull("expire_time"));
+        List<Team> teamList = this.list(queryWrapper);
+        if (CollectionUtils.isEmpty(teamList)){
+            return new ArrayList<>();
+        }
+        List<UserTeamVO> userTeamVOList = new ArrayList<>();
+        for (Team team : teamList) {
+            Long userId = team.getUserId();
+            if (userId==null){
+                continue;
+            }
+            User user = userService.getById(userId);
+            UserTeamVO userTeamVO = new UserTeamVO();
+            BeanUtils.copyProperties(team,userTeamVO);
+            //用户脱敏
+            if (user!=null){
+                UserVO userVO = new UserVO();
+                BeanUtils.copyProperties(user,userVO);
+                userTeamVO.setCreateUser(userVO);
+            }
+            userTeamVOList.add(userTeamVO);
+        }
+        return userTeamVOList;
+    }
+
+    @Override
+    public boolean updateTeam(TeamUpdateRequest teamUpdateRequest,User loginUser) {
+        if (teamUpdateRequest==null){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        Long id = teamUpdateRequest.getId();
+        if (id==null||id<0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        Team oldTeam = this.getById(id);
+        if (oldTeam==null){
+            throw new BusinessException(StatusCode.NULL_ERROR,"队伍不存在");
+        }
+        //只有管理员和本人可以修改
+        if (loginUser.getId()!=oldTeam.getUserId()&&!userService.isAdmin(loginUser)){
+            throw new BusinessException(StatusCode.NO_AUTH);
+        }
+        TeamStatusEnum statusEnum = TeamStatusEnum.getEnumByValue(teamUpdateRequest.getStatus());
+        if (statusEnum.equals(TeamStatusEnum.SECRET)){
+            if (StringUtils.isBlank(teamUpdateRequest.getPassword())){
+                throw new BusinessException(StatusCode.PARAMS_ERROR,"加密房间必须要设置密码");
+            }
+        }
+        Team updateTeam = new Team();
+        BeanUtils.copyProperties(teamUpdateRequest,updateTeam);
+        return this.updateById(updateTeam);
+    }
+
+    @Override
+    public boolean joinTeam(TeamJoinRequest teamJoinRequest, User loginUser) {
+        if (teamJoinRequest==null){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+
+
+        Long teamId = teamJoinRequest.getTeamId();
+        if (teamId==null||teamId<0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        Team team = this.getById(teamId);
+        if (team==null){
+            throw new BusinessException(StatusCode.NULL_ERROR,"队伍不存在");
+        }
+        Date expireTime = team.getExpireTime();
+        if (expireTime !=null&& expireTime.before(new Date())){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"队伍已过期");
+        }
+        Integer status = team.getStatus();
+        TeamStatusEnum statusEnum = TeamStatusEnum.getEnumByValue(status);
+        if (TeamStatusEnum.PRIVATE.equals(statusEnum)){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"禁止加入私有的队伍");
+        }
+        String password = teamJoinRequest.getPassword();
+        if (TeamStatusEnum.SECRET.equals(statusEnum)) {
+            if (StringUtils.isBlank(password)||!password.equals(team.getPassword())){
+                throw new BusinessException(StatusCode.PARAMS_ERROR,"密码错误");
+            }
+        }
+        //该用户已加入的队伍数量
+        long userId = loginUser.getId();
+        QueryWrapper<UserTeam> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("user_id",userId);
+        long hasJoinNum = userTeamService.count(queryWrapper);
+        if (hasJoinNum>5){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"最多创建和加入五个队伍");
+        }
+        //不重复加入队伍
+        queryWrapper=new QueryWrapper<>();
+        queryWrapper.eq("user_id",userId);
+        queryWrapper.eq("team_id",teamId);
+        long hasUserJoinTeam = userTeamService.count(queryWrapper);
+        if (hasUserJoinTeam>0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"用户已加入该队伍");
+        }
+        //队伍人数是否已满
+        queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("team_id",teamId);
+        long teamHasJoinNum = userTeamService.count(queryWrapper);
+        if (teamHasJoinNum>=team.getMaxNum()){
+            throw new BusinessException(StatusCode.NULL_ERROR,"队伍已满");
+        }
+        UserTeam userTeam = new UserTeam();
+        userTeam.setUserId(userId);
+        userTeam.setTeamId(teamId);
+        userTeam.setJoinTime(new Date());
+        return userTeamService.save(userTeam);
     }
 }
 

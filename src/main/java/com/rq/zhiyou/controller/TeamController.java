@@ -8,7 +8,10 @@ import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.model.domain.Team;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.dto.team.TeamAddRequest;
-import com.rq.zhiyou.model.dto.team.TeamQueryDto;
+import com.rq.zhiyou.model.dto.team.TeamJoinRequest;
+import com.rq.zhiyou.model.dto.team.TeamQueryDTO;
+import com.rq.zhiyou.model.dto.team.TeamUpdateRequest;
+import com.rq.zhiyou.model.vo.UserTeamVO;
 import com.rq.zhiyou.service.TeamService;
 import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.utils.ResultData;
@@ -55,11 +58,12 @@ public class TeamController {
     }
 
     @PostMapping("/update")
-    public ResultData<Boolean> updateTeam(@RequestBody Team team){
-        if (team==null){
+    public ResultData<Boolean> updateTeam(@RequestBody TeamUpdateRequest teamUpdateRequest,HttpServletRequest request){
+        if (teamUpdateRequest==null){
             throw new BusinessException(StatusCode.NULL_ERROR);
         }
-        boolean result = teamService.updateById(team);
+        User loginUser = userService.getLoginUser(request);
+        boolean result = teamService.updateTeam(teamUpdateRequest,loginUser);
         if (!result){
             throw new BusinessException(StatusCode.SYSTEM_ERROR,"修改失败");
         }
@@ -78,20 +82,19 @@ public class TeamController {
         return ResultData.success(team);
     }
 
+
     @GetMapping("/list")
-    public ResultData<List<Team>> listTeams( TeamQueryDto teamQueryDto){
+    public ResultData<List<UserTeamVO>> listTeams(TeamQueryDTO teamQueryDto,HttpServletRequest request){
         if (teamQueryDto==null){
             throw new BusinessException(StatusCode.NULL_ERROR);
         }
-        Team team = new Team();
-        BeanUtils.copyProperties(teamQueryDto,team);
-        QueryWrapper<Team> queryWrapper = new QueryWrapper<>(team);
-        List<Team> teamList = teamService.list(queryWrapper);
+        boolean isAdmin = userService.isAdmin(request);
+        List<UserTeamVO> teamList = teamService.listTeams(teamQueryDto,isAdmin);
         return ResultData.success(teamList);
     }
 
     @GetMapping("/list/page")
-    public ResultData<Page<Team>> listTeamsByPage(TeamQueryDto teamQueryDto){
+    public ResultData<Page<Team>> listTeamsByPage(TeamQueryDTO teamQueryDto){
         if (teamQueryDto==null){
             throw new BusinessException(StatusCode.NULL_ERROR);
         }
@@ -101,5 +104,15 @@ public class TeamController {
         Page<Team> page = new Page<>(teamQueryDto.getCurrent(), teamQueryDto.getPageSize());
         Page<Team> resultPage = teamService.page(page, queryWrapper);
         return ResultData.success(resultPage);
+    }
+
+    @PostMapping("/join")
+    public ResultData<Boolean> joinTeam(@RequestBody TeamJoinRequest teamJoinRequest,HttpServletRequest request){
+        if (teamJoinRequest==null){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean result= teamService.joinTeam(teamJoinRequest,loginUser);
+        return ResultData.success(result);
     }
 }

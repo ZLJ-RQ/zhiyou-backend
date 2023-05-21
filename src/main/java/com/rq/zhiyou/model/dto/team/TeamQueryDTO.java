@@ -2,7 +2,9 @@ package com.rq.zhiyou.model.dto.team;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.rq.zhiyou.common.PageRequest;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -11,12 +13,23 @@ import java.util.Date;
  * @author 若倾
  * @version 1.0
  * @description TODO
- * @date 2023/5/21 19:11
+ * @date 2023/5/21 15:11
  */
+@EqualsAndHashCode(callSuper = true)
 @Data
-public class TeamAddRequest implements Serializable {
+public class TeamQueryDTO extends PageRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    /**
+     * id
+     */
+    private Long id;
+
+    /**
+     * 搜素关键词(同时对队伍名称和描述搜索)
+     */
+    private String searchText;
+
     /**
      * 队伍名称
      */
@@ -32,10 +45,6 @@ public class TeamAddRequest implements Serializable {
      */
     private Integer maxNum;
 
-    /**
-     * 过期时间
-     */
-    private Date expireTime;
 
     /**
      * 用户id
@@ -46,11 +55,5 @@ public class TeamAddRequest implements Serializable {
      * 0 - 公开，1 - 私有，2 - 加密
      */
     private Integer status;
-
-    /**
-     * 密码
-     */
-    private String password;
-
 
 }
