@@ -1,11 +1,11 @@
-package com.rq.zhiyou.model.domain.request;
+package com.rq.zhiyou.model.dto.user;
 
 import lombok.Data;
 
 import java.io.Serializable;
 
 @Data
-public class UserRegisterRequest implements Serializable {
+public class UserLoginRequest implements Serializable {
 
     private static final long serialVersionUID = 6547149604805212199L;
 
@@ -13,5 +13,4 @@ public class UserRegisterRequest implements Serializable {
 
     private String password;
 
-    private String checkPassword;
 }

@@ -5,8 +5,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rq.zhiyou.common.StatusCode;
 import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.model.domain.User;
-import com.rq.zhiyou.model.domain.request.UserLoginRequest;
-import com.rq.zhiyou.model.domain.request.UserRegisterRequest;
+import com.rq.zhiyou.model.dto.user.UserLoginRequest;
+import com.rq.zhiyou.model.dto.user.UserRegisterRequest;
 import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.utils.ResultData;
 import org.apache.commons.lang3.StringUtils;
@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import static com.rq.zhiyou.constant.UserConstant.USER_LOGIN_STATE;

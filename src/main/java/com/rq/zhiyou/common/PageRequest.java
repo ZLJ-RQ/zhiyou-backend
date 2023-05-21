@@ -4,12 +4,14 @@ package com.rq.zhiyou.common;
 import com.rq.zhiyou.constant.CommonConstant;
 import lombok.Data;
 
+import java.io.Serializable;
+
 /**
  * 分页请求
  *
  */
 @Data
-public class PageRequest {
+public class PageRequest implements Serializable {
 
     /**
      * 当前页号
