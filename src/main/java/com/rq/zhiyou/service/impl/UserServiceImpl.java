@@ -12,7 +12,11 @@ import com.rq.zhiyou.mapper.UserMapper;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.service.UserService;
+import com.rq.zhiyou.utils.AlgorithmUtils;
+import io.swagger.models.auth.In;
+import javafx.util.Pair;
 import lombok.extern.slf4j.Slf4j;
+import net.bytebuddy.description.method.MethodDescription;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,10 +27,7 @@ import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -300,6 +301,42 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             log.error("redis set key error",e);
         }
         return userPage;
+    }
+
+    @Override
+    public List<User> matchUsers(long num, User loginUser) {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("id","tags");
+        queryWrapper.isNotNull("tags");
+        List<User> userList = this.list(queryWrapper);
+        String tags = loginUser.getTags();
+        Gson gson = new Gson();
+        List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
+        }.getType());
+        //以下标为key,分数为值
+        List<Pair<User,Long>> list=new ArrayList<>();
+        for (int i = 0; i < userList.size(); i++) {
+            User user = userList.get(i);
+            String userTags = user.getTags();
+            if(StringUtils.isBlank(userTags)||user.getId()==loginUser.getId()){
+                continue;
+            }
+            List<String> userTagList = gson.fromJson(userTags, new TypeToken<List<String>>() {
+            }.getType());
+            long distance = AlgorithmUtils.minDistance(tagList, userTagList);
+            list.add(new Pair<>(user,distance));
+        }
+        List<Pair<User, Long>> pairList = list.stream().
+                sorted((a, b) -> (int) (a.getValue() - b.getValue())).
+                limit(num).collect(Collectors.toList());
+        List<Long> userVOList = pairList.stream().
+                map(pair->pair.getKey().getId()).collect(Collectors.toList());
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        String idStr = StringUtils.join(userVOList, ",");
+        userQueryWrapper.in("id",userVOList).last("order by field(id,"+idStr+")");
+        List<User> safetyUserList = this.list(userQueryWrapper).
+                stream().map(this::getSafetyUser).collect(Collectors.toList());
+        return safetyUserList;
     }
 }
 

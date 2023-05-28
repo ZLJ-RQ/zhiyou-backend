@@ -7,6 +7,7 @@ import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.dto.user.UserLoginRequest;
 import com.rq.zhiyou.model.dto.user.UserRegisterRequest;
+import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.utils.ResultData;
 import org.apache.commons.lang3.StringUtils;
@@ -168,5 +169,19 @@ public class UserController {
         User loginUser = userService.getLoginUser(request);
         int result = userService.updateUser(user,loginUser);
         return ResultData.success(result);
+    }
+
+    /**
+     * 获取最匹配的用户
+     * @param request
+     * @return
+     */
+    @GetMapping("/match")
+    public ResultData<List<UserVO>> matchUsers(long num,HttpServletRequest request){
+        if (num<0||num>20){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        return ResultData.success(userService.matchUsers(num,loginUser));
     }
 }

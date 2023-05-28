@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author 若倾
@@ -24,6 +25,10 @@ public class TeamQueryDTO extends PageRequest implements Serializable {
      * id
      */
     private Long id;
+    /**
+     * 队伍ids
+     */
+    private List<Long> idList;
 
     /**
      * 搜素关键词(同时对队伍名称和描述搜索)

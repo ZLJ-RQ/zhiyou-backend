@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.vo.UserVO;
+import com.rq.zhiyou.utils.ResultData;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -73,4 +74,7 @@ public interface UserService extends IService<User> {
     int updateUser(User user,User loginUser);
 
     Page<User> recommendUsers(long pageSize, long pageNum, HttpServletRequest request);
+
+
+    List<User> matchUsers(long num, User loginUser);
 }

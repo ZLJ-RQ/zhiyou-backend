@@ -19,22 +19,25 @@ import java.util.List;
 public class UserTeamVO implements Serializable {
 
 
-
     /**
      * id
      */
-    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
-     * 用户id
+     * 队伍名称
      */
-    private Long userId;
+    private String name;
 
     /**
-     * 队伍id
+     * 描述
      */
-    private Long teamId;
+    private String description;
+
+    /**
+     * 最大人数
+     */
+    private Integer maxNum;
 
     /**
      * 过期时间
@@ -42,9 +45,14 @@ public class UserTeamVO implements Serializable {
     private Date expireTime;
 
     /**
-     * 加入时间
+     * 用户id
      */
-    private Date joinTime;
+    private Long userId;
+
+    /**
+     * 0 - 公开，1 - 私有，2 - 加密
+     */
+    private Integer status;
 
     /**
      * 创建时间
@@ -52,9 +60,22 @@ public class UserTeamVO implements Serializable {
     private Date createTime;
 
     /**
-     *
+     * 更新时间
      */
     private Date updateTime;
 
+    /**
+     * 创建人用户信息
+     */
     private UserVO createUser;
+
+    /**
+     * 已加入的用户数量
+     */
+    private int hasJoinNum;
+
+    /**
+     * 是否加入队伍
+     */
+    private boolean hasJoin;
 }
