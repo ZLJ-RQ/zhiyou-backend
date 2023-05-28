@@ -2,12 +2,11 @@ package com.rq.zhiyou;
 
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.service.UserService;
-import javax.annotation.Resource;
 import org.junit.jupiter.api.Test;
-import org.junit.rules.Stopwatch;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.StopWatch;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;

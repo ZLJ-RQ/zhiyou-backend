@@ -110,12 +110,6 @@
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.j256.simplemagic</groupId>
-            <artifactId>simplemagic</artifactId>
-            <version>1.17</version>
-        </dependency>
-
-        <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>easyexcel</artifactId>
             <version>3.2.1</version>
@@ -124,6 +118,18 @@
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
             <version>3.21.1</version>
+        </dependency>
+        <!-- https://cloud.tencent.com/document/product/436/10199-->
+        <dependency>
+            <groupId>com.qcloud</groupId>
+            <artifactId>cos_api</artifactId>
+            <version>5.6.89</version>
+        </dependency>
+        <!-- https://hutool.cn/docs/index.html#/-->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.8</version>
         </dependency>
     </dependencies>
 
