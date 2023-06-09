@@ -2,11 +2,13 @@ package com.rq.zhiyou.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.rq.zhiyou.common.DeleteRequest;
 import com.rq.zhiyou.common.StatusCode;
 import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.dto.user.UserLoginRequest;
 import com.rq.zhiyou.model.dto.user.UserRegisterRequest;
+import com.rq.zhiyou.model.vo.UserInfoVO;
 import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.utils.ResultData;
@@ -98,6 +100,21 @@ public class UserController {
     }
 
     /**
+     * 根据用户id查询用户信息
+     * @param id
+     * @return
+     */
+    @GetMapping("/{id}")
+    public ResultData<UserInfoVO> getUserInfoById(@PathVariable("id")long id,HttpServletRequest request){
+        if (id<=0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        UserInfoVO userInfoVO=userService.getUserInfoById(id,loginUser);
+        return ResultData.success(userInfoVO);
+    }
+
+    /**
      * 推荐用户列表
      * @param request
      * @return
@@ -183,5 +200,20 @@ public class UserController {
         }
         User loginUser = userService.getLoginUser(request);
         return ResultData.success(userService.matchUsers(num,loginUser));
+    }
+
+    @GetMapping("/searchFriends")
+    public ResultData<List<UserVO>> searchFriends(String searchText,HttpServletRequest request){
+        User loginUser = userService.getLoginUser(request);
+        return ResultData.success(userService.searchFriends(searchText,loginUser));
+    }
+
+    @PostMapping("/deleteFriends")
+    public ResultData<Boolean> deleteFriends(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request){
+        if (deleteRequest==null||deleteRequest.getId()<0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        return ResultData.success(userService.deleteFriends(deleteRequest.getId(),loginUser));
     }
 }

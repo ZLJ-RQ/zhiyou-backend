@@ -3,6 +3,7 @@ package com.rq.zhiyou.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.rq.zhiyou.model.domain.User;
+import com.rq.zhiyou.model.vo.UserInfoVO;
 import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.utils.ResultData;
 
@@ -77,4 +78,10 @@ public interface UserService extends IService<User> {
 
 
     List<User> matchUsers(long num, User loginUser);
+
+    List<UserVO> searchFriends(String searchText, User loginUser);
+
+    boolean deleteFriends(Long id, User loginUser);
+
+    UserInfoVO getUserInfoById(long id,User loginUser);
 }

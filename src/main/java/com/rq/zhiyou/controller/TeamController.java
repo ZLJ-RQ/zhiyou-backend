@@ -91,12 +91,12 @@ public class TeamController {
 
 
     @GetMapping("/list")
-    public ResultData<List<UserTeamVO>> listTeams(TeamQueryDTO teamQueryDto,HttpServletRequest request){
-        if (teamQueryDto==null){
+    public ResultData<List<UserTeamVO>> listTeams(TeamQueryRequest teamQueryRequest, HttpServletRequest request){
+        if (teamQueryRequest ==null){
             throw new BusinessException(StatusCode.NULL_ERROR);
         }
         boolean isAdmin = userService.isAdmin(request);
-        List<UserTeamVO> teamList = teamService.listTeams(teamQueryDto,isAdmin);
+        List<UserTeamVO> teamList = teamService.listTeams(teamQueryRequest,isAdmin);
         List<Long> teamIdList = teamList.stream().map(UserTeamVO::getId).collect(Collectors.toList());
         QueryWrapper<UserTeam> userTeamQueryWrapper=new QueryWrapper<>();
         //判断当前用户是否加入队伍
@@ -125,14 +125,14 @@ public class TeamController {
     }
 
     @GetMapping("/list/page")
-    public ResultData<Page<Team>> listTeamsByPage(TeamQueryDTO teamQueryDto){
-        if (teamQueryDto==null){
+    public ResultData<Page<Team>> listTeamsByPage(TeamQueryRequest teamQueryRequest){
+        if (teamQueryRequest ==null){
             throw new BusinessException(StatusCode.NULL_ERROR);
         }
         Team team = new Team();
-        BeanUtils.copyProperties(teamQueryDto,team);
+        BeanUtils.copyProperties(teamQueryRequest,team);
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>(team);
-        Page<Team> page = new Page<>(teamQueryDto.getCurrent(), teamQueryDto.getPageSize());
+        Page<Team> page = new Page<>(teamQueryRequest.getCurrent(), teamQueryRequest.getPageSize());
         Page<Team> resultPage = teamService.page(page, queryWrapper);
         return ResultData.success(resultPage);
     }
@@ -159,30 +159,30 @@ public class TeamController {
 
     /***
      * @description 获取我创建的队伍
-     * @param teamQueryDto
+     * @param teamQueryRequest
      * @param request
      * @return com.rq.zhiyou.utils.ResultData<java.util.List<com.rq.zhiyou.model.vo.UserTeamVO>>
     */
     @GetMapping("/list/my/create")
-    public ResultData<List<UserTeamVO>> listMyCreateTeams(TeamQueryDTO teamQueryDto,HttpServletRequest request){
-        if (teamQueryDto==null){
+    public ResultData<List<UserTeamVO>> listMyCreateTeams(TeamQueryRequest teamQueryRequest, HttpServletRequest request){
+        if (teamQueryRequest ==null){
             throw new BusinessException(StatusCode.NULL_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
-        teamQueryDto.setUserId(loginUser.getId());
-        List<UserTeamVO> teamList = teamService.listTeams(teamQueryDto,true);
+        teamQueryRequest.setUserId(loginUser.getId());
+        List<UserTeamVO> teamList = teamService.listTeams(teamQueryRequest,true);
         return ResultData.success(teamList);
     }
 
     /***
      * @description 获取我加入的队伍
-     * @param teamQueryDto
+     * @param teamQueryRequest
      * @param request
      * @return com.rq.zhiyou.utils.ResultData<java.util.List<com.rq.zhiyou.model.vo.UserTeamVO>>
      */
     @GetMapping("/list/my/join")
-    public ResultData<List<UserTeamVO>> listMyJoinTeams(TeamQueryDTO teamQueryDto,HttpServletRequest request){
-        if (teamQueryDto==null){
+    public ResultData<List<UserTeamVO>> listMyJoinTeams(TeamQueryRequest teamQueryRequest, HttpServletRequest request){
+        if (teamQueryRequest ==null){
             throw new BusinessException(StatusCode.NULL_ERROR);
         }
         boolean isAdmin = userService.isAdmin(request);
@@ -193,8 +193,12 @@ public class TeamController {
         //取出不重复的队伍id
         Map<Long, List<UserTeam>> listMap = list.stream().collect(Collectors.groupingBy(UserTeam::getTeamId));
         ArrayList<Long> idList = new ArrayList<>(listMap.keySet());
-        teamQueryDto.setIdList(idList);
-        List<UserTeamVO> teamList = teamService.listTeams(teamQueryDto,isAdmin);
+        teamQueryRequest.setIdList(idList);
+        List<UserTeamVO> teamList = teamService.listTeams(teamQueryRequest,isAdmin);
+        teamList.forEach(team->{
+            team.setHasJoin(true);
+            team.setHasJoinNum(listMap.get(team.getId()).size());
+        });
         return ResultData.success(teamList);
     }
 }

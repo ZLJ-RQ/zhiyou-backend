@@ -1,20 +1,22 @@
-package com.rq.zhiyou.model.domain;
+package com.rq.zhiyou.model.vo;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
-import lombok.Data;
 
 /**
- * 用户表
- * @TableName user
+ * @author 若倾
+ * @description TODO
  */
-@TableName(value ="user")
 @Data
-public class User implements Serializable {
+public class UserInfoVO implements Serializable {
     /**
-     * 
+     *
      */
     @TableId(type = IdType.AUTO)
     private long id;
@@ -45,19 +47,9 @@ public class User implements Serializable {
     private String profile;
 
     /**
-     * 密码
-     */
-    private String password;
-
-    /**
      * 邮箱
      */
     private String email;
-
-    /**
-     * 状态 0-正常
-     */
-    private Integer status;
 
     /**
      * 电话
@@ -70,31 +62,15 @@ public class User implements Serializable {
     private String tags;
 
     /**
-     * 好友id列表
+     * 是否是好友
      */
-    private String friendIds;
-
-    /**
-     * 创建时间
-     */
-    private Date createTime;
-
-    /**
-     * 更新时间
-     */
-    private Date updateTime;
-
-    /**
-     * 是否删除
-     */
-    @TableLogic
-    private Integer isDelete;
+    private Boolean isFriend;
 
     /**
      * 用户角色(0-普通用户 1-管理员)
      */
     private Integer userRole;
 
-    @TableField(exist = false)
+
     private static final long serialVersionUID = 1L;
 }

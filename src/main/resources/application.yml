@@ -33,11 +33,10 @@ spring:
     password: 123321
     database: 1
   jackson:
-#    date-format: yyyy年MM月dd日 HH:mm:ss
     timeZone: Asia/Shanghai
 mybatis-plus:
-#  configuration:
-#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       logic-delete-field: isDelete # 全局逻辑删除的实体字段名(since 3.3.0,配置后可以忽略不配置步骤2)

@@ -1,7 +1,6 @@
 package com.rq.zhiyou.once;
 
 import com.alibaba.excel.annotation.ExcelProperty;
-import io.swagger.models.auth.In;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;

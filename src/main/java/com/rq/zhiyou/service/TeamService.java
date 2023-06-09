@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.rq.zhiyou.model.domain.Team;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.dto.team.TeamJoinRequest;
-import com.rq.zhiyou.model.dto.team.TeamQueryDTO;
+import com.rq.zhiyou.model.dto.team.TeamQueryRequest;
 import com.rq.zhiyou.model.dto.team.TeamQuitRequest;
 import com.rq.zhiyou.model.dto.team.TeamUpdateRequest;
 import com.rq.zhiyou.model.vo.UserTeamVO;
@@ -21,7 +21,7 @@ public interface TeamService extends IService<Team> {
 
     long addTeam(Team team, User loginUser);
 
-    List<UserTeamVO> listTeams(TeamQueryDTO teamQueryDto, boolean isAdmin);
+    List<UserTeamVO> listTeams(TeamQueryRequest teamQueryDto, boolean isAdmin);
 
     boolean updateTeam(TeamUpdateRequest teamUpdateRequest,User loginUser);
 

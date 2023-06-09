@@ -1,5 +1,6 @@
 package com.rq.zhiyou;
 
+import cn.hutool.core.util.RandomUtil;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RList;
 import org.redisson.api.RedissonClient;
@@ -26,4 +27,5 @@ public class RedissonTest {
         list.add("123");
         System.out.println(list.get(0));
     }
+
 }

@@ -18,7 +18,7 @@ import java.util.List;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class TeamQueryDTO extends PageRequest implements Serializable {
+public class TeamQueryRequest extends PageRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
     /**

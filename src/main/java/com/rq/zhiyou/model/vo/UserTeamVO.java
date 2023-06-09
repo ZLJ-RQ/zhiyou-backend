@@ -30,6 +30,11 @@ public class UserTeamVO implements Serializable {
     private String name;
 
     /**
+     * 队伍头像
+     */
+    private String teamAvatarUrl;
+
+    /**
      * 描述
      */
     private String description;

@@ -28,6 +28,11 @@ public class TeamUpdateRequest implements Serializable {
     private String name;
 
     /**
+     * 队伍头像
+     */
+    private String teamAvatarUrl;
+
+    /**
      * 描述
      */
     private String description;
@@ -38,6 +43,10 @@ public class TeamUpdateRequest implements Serializable {
      */
     private Date expireTime;
 
+    /**
+     * 队伍公告
+     */
+    private String announce;
 
     /**
      * 0 - 公开，1 - 私有，2 - 加密

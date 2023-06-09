@@ -3,7 +3,6 @@ package com.rq.zhiyou.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.rq.zhiyou.common.StatusCode;
 import com.rq.zhiyou.exception.BusinessException;
@@ -12,7 +11,7 @@ import com.rq.zhiyou.model.domain.Team;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.domain.UserTeam;
 import com.rq.zhiyou.model.dto.team.TeamJoinRequest;
-import com.rq.zhiyou.model.dto.team.TeamQueryDTO;
+import com.rq.zhiyou.model.dto.team.TeamQueryRequest;
 import com.rq.zhiyou.model.dto.team.TeamQuitRequest;
 import com.rq.zhiyou.model.dto.team.TeamUpdateRequest;
 import com.rq.zhiyou.model.enums.TeamStatusEnum;
@@ -23,10 +22,8 @@ import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.service.UserTeamService;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
-import io.lettuce.core.RedisClient;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
@@ -83,6 +80,11 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (StringUtils.isNotBlank(description)&&description.length()>512){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"队伍描述过长");
         }
+        //        c. 公告 <= 50
+        String announce = team.getAnnounce();
+        if (StringUtils.isNotBlank(announce)&&announce.length()>50){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"队伍公告过长");
+        }
 //        d. status 是否公开（int）不传默认为 0（公开）
         int status = Optional.ofNullable(team.getStatus()).orElse(0);
         TeamStatusEnum statusEnum = TeamStatusEnum.getEnumByValue(status);
@@ -128,39 +130,39 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     }
 
     @Override
-    public List<UserTeamVO> listTeams(TeamQueryDTO teamQueryDto, boolean isAdmin) {
+    public List<UserTeamVO> listTeams(TeamQueryRequest teamQueryRequest, boolean isAdmin) {
         QueryWrapper<Team> queryWrapper = new QueryWrapper<>();
-        if (teamQueryDto!=null){
-            Long id = teamQueryDto.getId();
+        if (teamQueryRequest !=null){
+            Long id = teamQueryRequest.getId();
             if (id!=null&&id>0){
                 queryWrapper.eq("id",id);
             }
-            List<Long> idList = teamQueryDto.getIdList();
+            List<Long> idList = teamQueryRequest.getIdList();
             String idsStr = StringUtils.join(idList, ",");
             if (CollectionUtils.isNotEmpty(idList)){
                 queryWrapper.in("id",idList).last("ORDER BY FIELD(id," + idsStr + ")");
             }
-            String searchText = teamQueryDto.getSearchText();
+            String searchText = teamQueryRequest.getSearchText();
             if (StringUtils.isNotBlank(searchText)){
                 queryWrapper.and(qw->qw.like("name",searchText).or().like("description",searchText));
             }
-            String name = teamQueryDto.getName();
+            String name = teamQueryRequest.getName();
             if (StringUtils.isNotBlank(name)){
                 queryWrapper.like("name",name);
             }
-            String description = teamQueryDto.getDescription();
+            String description = teamQueryRequest.getDescription();
             if (StringUtils.isNotBlank(description)){
                 queryWrapper.like("description",description);
             }
-            Integer maxNum = teamQueryDto.getMaxNum();
+            Integer maxNum = teamQueryRequest.getMaxNum();
             if (maxNum!=null&&maxNum>0){
                 queryWrapper.eq("max_num",maxNum);
             }
-            Long userId = teamQueryDto.getUserId();
+            Long userId = teamQueryRequest.getUserId();
             if (userId!=null&&userId>0){
                 queryWrapper.eq("user_id",userId);
             }
-            Integer status = teamQueryDto.getStatus();
+            Integer status = teamQueryRequest.getStatus();
             TeamStatusEnum statusEnum = TeamStatusEnum.getEnumByValue(status);
             if (statusEnum==null){
                 statusEnum=TeamStatusEnum.PUBLIC;

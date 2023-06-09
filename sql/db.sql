@@ -7,6 +7,7 @@ CREATE TABLE user (
       gender tinyint DEFAULT NULL COMMENT '性别',
       profile varchar(512) DEFAULT NULL COMMENT '用户简介',
       password varchar(512) NOT NULL COMMENT '密码',
+      friend_ids varchar(512)  NULL COMMENT '朋友id列表',
       email varchar(512) DEFAULT NULL COMMENT '邮箱',
       status int DEFAULT '0' COMMENT '状态 0-正常',
       phone varchar(128) DEFAULT NULL COMMENT '电话',
@@ -22,6 +23,7 @@ CREATE TABLE user (
 create table team
 (
     id           bigint auto_increment comment 'id' primary key,
+    team_avatar_url varchar(1024)                      null comment '队伍头像',
     name   varchar(256)                   not null comment '队伍名称',
     description varchar(1024)                      null comment '描述',
     max_num    int      default 1                 not null comment '最大人数',
@@ -29,6 +31,7 @@ create table team
     user_id            bigint comment '用户id',
     status    int      default 0                 not null comment '0 - 公开，1 - 私有，2 - 加密',
     password varchar(512)                       null comment '密码',
+    announce      varchar(512)                       null comment '队伍公告',
     create_time   datetime default CURRENT_TIMESTAMP null comment '创建时间',
     update_time   datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
     is_delete     tinyint  default 0                 not null comment '是否删除'
@@ -46,6 +49,34 @@ create table user_team
     is_delete     tinyint  default 0                 not null comment '是否删除'
 ) comment '用户队伍关系';
 
+create table friends
+(
+    id         bigint auto_increment comment '好友申请id'
+        primary key,
+    from_id     bigint                             not null comment '发送申请的用户id',
+    receive_id  bigint                             null comment '接收申请的用户id ',
+    is_read     tinyint  default 0                 not null comment '是否已读(0-未读 1-已读)',
+    status     tinyint  default 0                 not null comment '申请状态 默认0 （0-未通过 1-已同意 2-不同意）',
+    create_time datetime default CURRENT_TIMESTAMP null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP null,
+    is_delete   tinyint  default 0                 not null comment '是否删除',
+    remark     varchar(256)                       null comment '好友申请备注信息'
+)
+    comment '好友申请管理表' charset = utf8mb4;
+
+create table chat
+(
+    id         bigint auto_increment comment '聊天记录id'
+        primary key,
+    from_id     bigint                                  not null comment '发送消息id',
+    to_id       bigint                                  null comment '接收消息id',
+    text       varchar(512)                             null comment '聊天记录',
+    chat_type   tinyint                                 not null comment '聊天类型 1-私聊 2-群聊',
+    team_id     bigint                                  null comment '队伍id',
+    create_time datetime default CURRENT_TIMESTAMP      null comment '创建时间',
+    update_time datetime default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP  null comment '修改时间'
+)
+    comment '聊天消息表' charset = utf8mb4;
 
 create table tag
 (

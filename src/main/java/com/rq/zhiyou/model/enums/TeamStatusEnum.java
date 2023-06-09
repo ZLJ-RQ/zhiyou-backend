@@ -1,7 +1,5 @@
 package com.rq.zhiyou.model.enums;
 
-import io.swagger.models.auth.In;
-
 /**
  * @author 若倾
  * @description 队伍状态枚举

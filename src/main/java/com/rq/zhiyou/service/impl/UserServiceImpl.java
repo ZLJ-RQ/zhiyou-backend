@@ -1,5 +1,6 @@
 package com.rq.zhiyou.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -10,19 +11,16 @@ import com.rq.zhiyou.constant.UserConstant;
 import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.mapper.UserMapper;
 import com.rq.zhiyou.model.domain.User;
+import com.rq.zhiyou.model.vo.UserInfoVO;
 import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.utils.AlgorithmUtils;
-import io.swagger.models.auth.In;
 import javafx.util.Pair;
 import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.description.method.MethodDescription;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
@@ -270,9 +268,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (userId<=0){
             throw new BusinessException(StatusCode.PARAMS_ERROR);
         }
-        if (StringUtils.isAllBlank(user.getUsername(), user.getAvatarUrl(),user.getEmail(), user.getPhone())||user.getGender()==null) {
-            throw new BusinessException(StatusCode.PARAMS_ERROR);
-        }
+//        if (StringUtils.isAllBlank(user.getUsername(), user.getAvatarUrl(),user.getEmail(), user.getPhone())||user.getGender()==null) {
+//            throw new BusinessException(StatusCode.PARAMS_ERROR);
+//        }
         //仅管理员和本人可进行修改
         if (!isAdmin(loginUser)&& !(userId==loginUser.getId())){
             throw new BusinessException(StatusCode.NO_AUTH);
@@ -337,6 +335,51 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         List<User> safetyUserList = this.list(userQueryWrapper).
                 stream().map(this::getSafetyUser).collect(Collectors.toList());
         return safetyUserList;
+    }
+
+    @Override
+    public List<UserVO> searchFriends(String searchText, User loginUser) {
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.isNotBlank(searchText)){
+            queryWrapper.like(User::getUsername,searchText);
+        }
+        String friendIds = loginUser.getFriendIds();
+        Gson gson = new Gson();
+        Set<Long> idsSet = gson.fromJson(friendIds, new TypeToken<Set<String>>() {}.getType());
+        queryWrapper.in(User::getId,idsSet);
+        List<User> list = list(queryWrapper);
+        return list.stream().map(user -> {
+            UserVO userVO = new UserVO();
+            BeanUtils.copyProperties(user,userVO);
+            return userVO;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean deleteFriends(Long id, User loginUser) {
+        String friendIds = loginUser.getFriendIds();
+        if (StringUtils.isBlank(friendIds)){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        Gson gson = new Gson();
+        Set<Long> idsSet = gson.fromJson(friendIds, new TypeToken<Set<String>>() {}.getType());
+        idsSet.remove(id);
+        loginUser.setFriendIds(gson.toJson(idsSet));
+        return updateById(loginUser);
+    }
+
+    @Override
+    public UserInfoVO getUserInfoById(long id,User loginUser) {
+        User user = getById(id);
+        UserInfoVO userInfoVO = new UserInfoVO();
+        BeanUtils.copyProperties(user,userInfoVO);
+        String friendIds = loginUser.getFriendIds();
+        if (friendIds.contains(String.valueOf(id))){
+            userInfoVO.setIsFriend(true);
+        }else {
+            userInfoVO.setIsFriend(false);
+        }
+        return userInfoVO;
     }
 }
 
