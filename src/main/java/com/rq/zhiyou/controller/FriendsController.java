@@ -5,14 +5,12 @@ import com.rq.zhiyou.common.StatusCode;
 import com.rq.zhiyou.constant.FriendsConstant;
 import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.model.domain.User;
-import com.rq.zhiyou.model.dto.friends.FriendsAddRequest;
+import com.rq.zhiyou.model.request.friends.FriendsAddRequest;
 import com.rq.zhiyou.model.vo.FriendsVO;
 import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.service.FriendsService;
 import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.utils.ResultData;
-import io.swagger.models.auth.In;
-import jodd.util.StringUtil;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;

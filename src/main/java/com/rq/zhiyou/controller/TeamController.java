@@ -1,5 +1,6 @@
 package com.rq.zhiyou.controller;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rq.zhiyou.common.DeleteRequest;
@@ -8,7 +9,7 @@ import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.model.domain.Team;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.domain.UserTeam;
-import com.rq.zhiyou.model.dto.team.*;
+import com.rq.zhiyou.model.request.team.*;
 import com.rq.zhiyou.model.vo.UserTeamVO;
 import com.rq.zhiyou.service.TeamService;
 import com.rq.zhiyou.service.UserService;
@@ -78,15 +79,16 @@ public class TeamController {
     }
 
     @GetMapping("/get")
-    public ResultData<Team> getTeamById(long id){
-        if (id<=0){
+    public ResultData<UserTeamVO> getTeamById(long teamId,HttpServletRequest request){
+        if (teamId<=0){
             throw new BusinessException(StatusCode.PARAMS_ERROR);
         }
-        Team team = teamService.getById(id);
-        if (team==null){
+        User loginUser = userService.getLoginUser(request);
+        UserTeamVO userTeamVO= teamService.getTeamById(teamId,loginUser);
+        if (userTeamVO==null){
             throw new BusinessException(StatusCode.SYSTEM_ERROR,"查询队伍失败");
         }
-        return ResultData.success(team);
+        return ResultData.success(userTeamVO);
     }
 
 
@@ -96,8 +98,11 @@ public class TeamController {
             throw new BusinessException(StatusCode.NULL_ERROR);
         }
         boolean isAdmin = userService.isAdmin(request);
-        List<UserTeamVO> teamList = teamService.listTeams(teamQueryRequest,isAdmin);
+        List<UserTeamVO> teamList = teamService.listTeams(teamQueryRequest,isAdmin,0);
         List<Long> teamIdList = teamList.stream().map(UserTeamVO::getId).collect(Collectors.toList());
+        if (CollectionUtil.isEmpty(teamIdList)){
+            return ResultData.success(new ArrayList<UserTeamVO>());
+        }
         QueryWrapper<UserTeam> userTeamQueryWrapper=new QueryWrapper<>();
         //判断当前用户是否加入队伍
         try {
@@ -113,6 +118,7 @@ public class TeamController {
             e.printStackTrace();
         }
         //查询加入的用户数量
+
         QueryWrapper<UserTeam> userTeamJoinQueryWrapper=new QueryWrapper<>();
         userTeamJoinQueryWrapper.in("team_id",teamIdList);
         List<UserTeam> userTeamList = userTeamService.list(userTeamJoinQueryWrapper);
@@ -170,7 +176,7 @@ public class TeamController {
         }
         User loginUser = userService.getLoginUser(request);
         teamQueryRequest.setUserId(loginUser.getId());
-        List<UserTeamVO> teamList = teamService.listTeams(teamQueryRequest,true);
+        List<UserTeamVO> teamList = teamService.listTeams(teamQueryRequest,true,0);
         return ResultData.success(teamList);
     }
 
@@ -194,7 +200,7 @@ public class TeamController {
         Map<Long, List<UserTeam>> listMap = list.stream().collect(Collectors.groupingBy(UserTeam::getTeamId));
         ArrayList<Long> idList = new ArrayList<>(listMap.keySet());
         teamQueryRequest.setIdList(idList);
-        List<UserTeamVO> teamList = teamService.listTeams(teamQueryRequest,isAdmin);
+        List<UserTeamVO> teamList = teamService.listTeams(teamQueryRequest,isAdmin,1);
         teamList.forEach(team->{
             team.setHasJoin(true);
             team.setHasJoinNum(listMap.get(team.getId()).size());

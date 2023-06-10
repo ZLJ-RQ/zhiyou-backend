@@ -28,16 +28,16 @@ public class UserVO implements Serializable {
      */
     private String avatarUrl;
 
+    /**
+     * 用户标签
+     */
+    private String tags;
 
     /**
      * 用户角色：user/admin/ban
      */
     private Integer userRole;
 
-    /**
-     * 创建时间
-     */
-    private Date createTime;
 
     private static final long serialVersionUID = 1L;
 }

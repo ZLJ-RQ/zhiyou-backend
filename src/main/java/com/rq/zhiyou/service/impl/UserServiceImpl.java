@@ -268,10 +268,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (userId<=0){
             throw new BusinessException(StatusCode.PARAMS_ERROR);
         }
-//        if (StringUtils.isAllBlank(user.getUsername(), user.getAvatarUrl(),user.getEmail(), user.getPhone())||user.getGender()==null) {
-//            throw new BusinessException(StatusCode.PARAMS_ERROR);
-//        }
-        //仅管理员和本人可进行修改
+        if (StringUtils.isNotBlank(user.getUsername())&&user.getUsername().length()>10){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"昵称不能超过10个字");
+        }
+        String phone = user.getPhone();
+        String phoneValidPattern="/^(?:(?:\\+|00)86)?1(?:(?:3[\\d])|(?:4[5-7|9])|(?:5[0-3|5-9])|(?:6[5-7])|(?:7[0-8])|(?:8[\\d])|(?:9[1|8|9]))\\d{8}$/";
+        Matcher phoneMatcher = Pattern.compile(phoneValidPattern).matcher(phone);
+        if (StringUtils.isNotBlank(phone)&& !phoneMatcher.find()){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"手机号格式不符");
+        }
+        String email = user.getEmail();
+        String emailValidPattern="^[A-Za-z0-9\\u4e00-\\u9fa5]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$";
+        Matcher emailMatcher = Pattern.compile(emailValidPattern).matcher(email);
+        if (StringUtils.isNotBlank(email)&& !emailMatcher.find()){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"邮箱格式不符");
+        }
+        if (StringUtils.isNotBlank(user.getProfile())&&user.getProfile().length()>50){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"描述不能超过50个字");
+        }
         if (!isAdmin(loginUser)&& !(userId==loginUser.getId())){
             throw new BusinessException(StatusCode.NO_AUTH);
         }

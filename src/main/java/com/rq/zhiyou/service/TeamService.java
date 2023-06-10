@@ -3,10 +3,10 @@ package com.rq.zhiyou.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.rq.zhiyou.model.domain.Team;
 import com.rq.zhiyou.model.domain.User;
-import com.rq.zhiyou.model.dto.team.TeamJoinRequest;
-import com.rq.zhiyou.model.dto.team.TeamQueryRequest;
-import com.rq.zhiyou.model.dto.team.TeamQuitRequest;
-import com.rq.zhiyou.model.dto.team.TeamUpdateRequest;
+import com.rq.zhiyou.model.request.team.TeamJoinRequest;
+import com.rq.zhiyou.model.request.team.TeamQueryRequest;
+import com.rq.zhiyou.model.request.team.TeamQuitRequest;
+import com.rq.zhiyou.model.request.team.TeamUpdateRequest;
 import com.rq.zhiyou.model.vo.UserTeamVO;
 
 import java.util.List;
@@ -21,7 +21,7 @@ public interface TeamService extends IService<Team> {
 
     long addTeam(Team team, User loginUser);
 
-    List<UserTeamVO> listTeams(TeamQueryRequest teamQueryDto, boolean isAdmin);
+    List<UserTeamVO> listTeams(TeamQueryRequest teamQueryDto, boolean isAdmin,int state);
 
     boolean updateTeam(TeamUpdateRequest teamUpdateRequest,User loginUser);
 
@@ -31,4 +31,6 @@ public interface TeamService extends IService<Team> {
     boolean quitTeam(TeamQuitRequest teamQuitRequest, User loginUser);
 
     boolean deleteTeam(Long id, User loginUser);
+
+    UserTeamVO getTeamById(long teamId,User loginUser);
 }

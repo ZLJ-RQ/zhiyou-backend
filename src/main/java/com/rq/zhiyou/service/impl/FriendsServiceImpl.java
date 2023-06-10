@@ -1,6 +1,5 @@
 package com.rq.zhiyou.service.impl;
 
-import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -12,7 +11,7 @@ import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.mapper.FriendsMapper;
 import com.rq.zhiyou.model.domain.Friends;
 import com.rq.zhiyou.model.domain.User;
-import com.rq.zhiyou.model.dto.friends.FriendsAddRequest;
+import com.rq.zhiyou.model.request.friends.FriendsAddRequest;
 import com.rq.zhiyou.model.vo.FriendsVO;
 import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.service.FriendsService;

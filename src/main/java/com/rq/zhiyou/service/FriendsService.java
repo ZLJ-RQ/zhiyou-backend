@@ -4,7 +4,7 @@ package com.rq.zhiyou.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.rq.zhiyou.model.domain.Friends;
 import com.rq.zhiyou.model.domain.User;
-import com.rq.zhiyou.model.dto.friends.FriendsAddRequest;
+import com.rq.zhiyou.model.request.friends.FriendsAddRequest;
 import com.rq.zhiyou.model.vo.FriendsVO;
 import com.rq.zhiyou.model.vo.UserVO;
 

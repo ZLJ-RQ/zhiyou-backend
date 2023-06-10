@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.rq.zhiyou.model.domain.Post;
-import com.rq.zhiyou.model.dto.post.PostQueryRequest;
+import com.rq.zhiyou.model.request.post.PostQueryRequest;
 import com.rq.zhiyou.model.vo.PostVO;
 
 import javax.servlet.http.HttpServletRequest;

@@ -14,7 +14,7 @@ spring:
     username: root
     password: root
   session:
-    #单位是分钟
+    #单位是秒
     timeout: 86400
     store-type: redis
   # 支持 swagger3

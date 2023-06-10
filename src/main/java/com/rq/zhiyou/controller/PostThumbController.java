@@ -3,7 +3,7 @@ package com.rq.zhiyou.controller;
 import com.rq.zhiyou.common.StatusCode;
 import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.model.domain.User;
-import com.rq.zhiyou.model.dto.postthumb.PostThumbAddRequest;
+import com.rq.zhiyou.model.request.postthumb.PostThumbAddRequest;
 import com.rq.zhiyou.service.PostThumbService;
 import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.utils.ResultData;

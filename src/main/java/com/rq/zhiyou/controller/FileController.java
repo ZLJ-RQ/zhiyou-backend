@@ -6,7 +6,7 @@ import com.rq.zhiyou.constant.FileConstant;
 import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.manager.CosManager;
 import com.rq.zhiyou.model.domain.User;
-import com.rq.zhiyou.model.dto.file.UploadFileRequest;
+import com.rq.zhiyou.model.request.file.UploadFileRequest;
 import com.rq.zhiyou.model.enums.FileUploadBizEnum;
 import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.utils.ResultData;
