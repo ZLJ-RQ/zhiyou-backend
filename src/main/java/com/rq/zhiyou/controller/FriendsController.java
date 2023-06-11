@@ -62,12 +62,12 @@ public class FriendsController {
         return ResultData.success(result);
     }
 
-    @GetMapping("/list")
-    public ResultData<List<UserVO>> friendsList(String username,HttpServletRequest request){
-        User loginUser = userService.getLoginUser(request);
-        List<UserVO> userVOList= friendsService.friendsList(username,loginUser);
-        return ResultData.success(userVOList);
-    }
+//    @GetMapping("/list")
+//    public ResultData<List<UserVO>> friendsList(String username,HttpServletRequest request){
+//        User loginUser = userService.getLoginUser(request);
+//        List<UserVO> userVOList= friendsService.friendsList(username,loginUser);
+//        return ResultData.success(userVOList);
+//    }
 
     @GetMapping("/receive/records")
     public ResultData<List<FriendsVO>> friendsReceiveRecords(HttpServletRequest request){
@@ -84,7 +84,7 @@ public class FriendsController {
     }
 
     @GetMapping("/read")
-    public ResultData<Boolean> toRead(@RequestParam("ids") Set<Long> ids, HttpServletRequest request){
+    public ResultData<Boolean> toRead(@RequestParam(value = "ids",required = false) Set<Long> ids, HttpServletRequest request){
         if (CollectionUtil.isEmpty(ids)){
             return ResultData.success(false);
         }

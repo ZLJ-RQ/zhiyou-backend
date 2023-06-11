@@ -19,6 +19,7 @@ import com.rq.zhiyou.utils.ResultData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -31,6 +32,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/post")
+@ApiIgnore
 @Slf4j
 public class PostController {
 

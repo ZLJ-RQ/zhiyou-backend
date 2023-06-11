@@ -11,6 +11,7 @@ import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.domain.UserTeam;
 import com.rq.zhiyou.model.request.team.*;
 import com.rq.zhiyou.model.vo.UserTeamVO;
+import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.service.TeamService;
 import com.rq.zhiyou.service.UserService;
 import com.rq.zhiyou.service.UserTeamService;
@@ -78,9 +79,9 @@ public class TeamController {
         return ResultData.success(true);
     }
 
-    @GetMapping("/get")
-    public ResultData<UserTeamVO> getTeamById(long teamId,HttpServletRequest request){
-        if (teamId<=0){
+    @GetMapping("/get/teamInfo")
+    public ResultData<UserTeamVO> getTeamInfoById(Long teamId,HttpServletRequest request){
+        if (teamId==null||teamId<=0){
             throw new BusinessException(StatusCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
@@ -89,6 +90,28 @@ public class TeamController {
             throw new BusinessException(StatusCode.SYSTEM_ERROR,"查询队伍失败");
         }
         return ResultData.success(userTeamVO);
+    }
+    //获取除队长以外成员信息
+    @GetMapping("/get/member")
+    public ResultData<List<UserVO>> getTeamMemberById(Long teamId, HttpServletRequest request){
+        if (teamId==null||teamId<=0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        List<UserVO> list= teamService.getTeamMemberById(teamId,loginUser);
+        return ResultData.success(list);
+    }
+
+    @GetMapping("/get")
+    public ResultData<Team> getTeamById(Long teamId){
+        if (teamId==null||teamId<=0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        Team team= teamService.getById(teamId);
+        if (team==null){
+            throw new BusinessException(StatusCode.SYSTEM_ERROR,"查询队伍失败");
+        }
+        return ResultData.success(team);
     }
 
 
@@ -160,6 +183,16 @@ public class TeamController {
         }
         User loginUser = userService.getLoginUser(request);
         boolean result= teamService.quitTeam(teamQuitRequest,loginUser);
+        return ResultData.success(result);
+    }
+
+    @PostMapping("/transfer")
+    public ResultData<Boolean> transferTeam(@RequestBody TeamTransferRequest teamTransferRequest, HttpServletRequest request){
+        if (teamTransferRequest==null){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean result= teamService.transferTeam(teamTransferRequest,loginUser);
         return ResultData.success(result);
     }
 

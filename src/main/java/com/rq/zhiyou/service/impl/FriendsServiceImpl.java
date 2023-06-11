@@ -105,27 +105,27 @@ public class FriendsServiceImpl extends ServiceImpl<FriendsMapper, Friends>
         userService.updateById(user);
     }
 
-    @Transactional
-    @Override
-    public List<UserVO> friendsList(String username, User loginUser) {
-        long userId = loginUser.getId();
-        LambdaQueryWrapper<Friends> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Friends::getReceiveId,userId).or().eq(Friends::getFromId,userId);
-        queryWrapper.eq(Friends::getStatus,FriendsConstant.AGREE_STATUS);
-        List<Friends> friendsList = list(queryWrapper);
-        Set<Long> idsFromList = friendsList.stream().map(Friends::getFromId).collect(Collectors.toSet());
-        Set<Long> idsReceiveList = friendsList.stream().map(Friends::getReceiveId).collect(Collectors.toSet());
-        idsFromList.addAll(idsReceiveList);
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.ne("id",userId);
-        userQueryWrapper.in("id",idsFromList);
-        userQueryWrapper.like(username!=null,"username",username);
-        return userService.list(userQueryWrapper).stream().map(user -> {
-            UserVO userVO = new UserVO();
-            BeanUtils.copyProperties(user, userVO);
-            return userVO;
-        }).collect(Collectors.toList());
-    }
+//    @Transactional
+//    @Override
+//    public List<UserVO> friendsList(String username, User loginUser) {
+//        long userId = loginUser.getId();
+//        LambdaQueryWrapper<Friends> queryWrapper = new LambdaQueryWrapper<>();
+//        queryWrapper.eq(Friends::getReceiveId,userId).or().eq(Friends::getFromId,userId);
+//        queryWrapper.eq(Friends::getStatus,FriendsConstant.AGREE_STATUS);
+//        List<Friends> friendsList = list(queryWrapper);
+//        Set<Long> idsFromList = friendsList.stream().map(Friends::getFromId).collect(Collectors.toSet());
+//        Set<Long> idsReceiveList = friendsList.stream().map(Friends::getReceiveId).collect(Collectors.toSet());
+//        idsFromList.addAll(idsReceiveList);
+//        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+//        userQueryWrapper.ne("id",userId);
+//        userQueryWrapper.in("id",idsFromList);
+//        userQueryWrapper.like(username!=null,"username",username);
+//        return userService.list(userQueryWrapper).stream().map(user -> {
+//            UserVO userVO = new UserVO();
+//            BeanUtils.copyProperties(user, userVO);
+//            return userVO;
+//        }).collect(Collectors.toList());
+//    }
 
     @Override
     public List<FriendsVO> friendsRecords(User loginUser, int status) {

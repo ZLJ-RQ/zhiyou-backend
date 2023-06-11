@@ -15,10 +15,17 @@ import java.util.List;
 */
 public interface ChatService extends IService<Chat> {
 
+    /**
+     *  获取私聊消息记录
+     */
     List<ChatVO> getPrivateChat(Long toId, User loginUser);
-
+    /**
+     *  获取队伍消息记录
+     */
     List<ChatVO> getTeamChat(Long teamId, User loginUser);
-
+    /**
+     *  chatVO映射
+     */
     ChatVO chatResult(Long userId, String text, Integer chatType);
 
     /**

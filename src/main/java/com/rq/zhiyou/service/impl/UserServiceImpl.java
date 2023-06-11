@@ -1,5 +1,6 @@
 package com.rq.zhiyou.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -11,6 +12,7 @@ import com.rq.zhiyou.constant.UserConstant;
 import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.mapper.UserMapper;
 import com.rq.zhiyou.model.domain.User;
+import com.rq.zhiyou.model.request.user.UserUpdatePasswordRequest;
 import com.rq.zhiyou.model.vo.UserInfoVO;
 import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.service.UserService;
@@ -263,7 +265,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public int updateUser(User user,User loginUser) {
+    public boolean updateUser(User user,User loginUser) {
         long userId = user.getId();
         if (userId<=0){
             throw new BusinessException(StatusCode.PARAMS_ERROR);
@@ -271,16 +273,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (StringUtils.isNotBlank(user.getUsername())&&user.getUsername().length()>10){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"昵称不能超过10个字");
         }
-        String phone = user.getPhone();
         String phoneValidPattern="/^(?:(?:\\+|00)86)?1(?:(?:3[\\d])|(?:4[5-7|9])|(?:5[0-3|5-9])|(?:6[5-7])|(?:7[0-8])|(?:8[\\d])|(?:9[1|8|9]))\\d{8}$/";
-        Matcher phoneMatcher = Pattern.compile(phoneValidPattern).matcher(phone);
-        if (StringUtils.isNotBlank(phone)&& !phoneMatcher.find()){
+        if (StringUtils.isNotBlank(user.getPhone())&& !Pattern.compile(phoneValidPattern).matcher(user.getPhone()).find()){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"手机号格式不符");
         }
-        String email = user.getEmail();
         String emailValidPattern="^[A-Za-z0-9\\u4e00-\\u9fa5]+@[a-zA-Z0-9_-]+(\\.[a-zA-Z0-9_-]+)+$";
-        Matcher emailMatcher = Pattern.compile(emailValidPattern).matcher(email);
-        if (StringUtils.isNotBlank(email)&& !emailMatcher.find()){
+        if (StringUtils.isNotBlank(user.getEmail())&& !Pattern.compile(emailValidPattern).matcher(user.getEmail()).find()){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"邮箱格式不符");
         }
         if (StringUtils.isNotBlank(user.getProfile())&&user.getProfile().length()>50){
@@ -289,15 +287,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!isAdmin(loginUser)&& !(userId==loginUser.getId())){
             throw new BusinessException(StatusCode.NO_AUTH);
         }
-        User oldUser = userMapper.selectById(userId);
+        User oldUser = getById(userId);
         if (oldUser==null){
             throw new BusinessException(StatusCode.NULL_ERROR);
         }
-        return userMapper.updateById(user);
+        return updateById(user);
     }
 
     @Override
-    public Page<User> recommendUsers(long pageSize, long pageNum, HttpServletRequest request) {
+    public Page<User> recommendUsers(String username,long pageSize, long pageNum, HttpServletRequest request) {
         User loginUser = getLoginUser(request);
         final String RECOMMEND_KEY="zhiyou:user:recommend:"+loginUser.getId();
         Page<User> userPage =(Page<User>) redisTemplate.opsForValue().get(RECOMMEND_KEY);
@@ -305,6 +303,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             return userPage;
         }
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.like(username!=null,"username",username);
         userPage = page(new Page<>(pageNum,pageSize),queryWrapper);
         userPage.setRecords(userPage.getRecords().stream().map(user -> getSafetyUser(user)).collect(Collectors.toList()));
         try {
@@ -358,8 +357,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             queryWrapper.like(User::getUsername,searchText);
         }
         String friendIds = loginUser.getFriendIds();
+        if (StringUtils.isBlank(friendIds)){
+            return new ArrayList<>();
+        }
         Gson gson = new Gson();
         Set<Long> idsSet = gson.fromJson(friendIds, new TypeToken<Set<String>>() {}.getType());
+        if (CollectionUtil.isEmpty(idsSet)){
+            return new ArrayList<>();
+        }
         queryWrapper.in(User::getId,idsSet);
         List<User> list = list(queryWrapper);
         return list.stream().map(user -> {
@@ -394,6 +399,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             userInfoVO.setIsFriend(false);
         }
         return userInfoVO;
+    }
+
+    @Override
+    public boolean updateUserPassword(UserUpdatePasswordRequest userUpdatePasswordRequest, User loginUser) {
+        //检验用户旧密码,新密码,校验密码是否符合要求
+        String oldPassword = userUpdatePasswordRequest.getOldPassword();
+        String newPassword = userUpdatePasswordRequest.getNewPassword();
+        String checkPassword = userUpdatePasswordRequest.getCheckPassword();
+        //非空判断
+        if(StringUtils.isAllBlank(oldPassword,newPassword,checkPassword))
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"参数为空");
+        //密码不小于8位
+        if (newPassword.length()<8||oldPassword.length()<8||checkPassword.length()<8)
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"密码长度过短");
+        //密码和校验密码要一致
+        if (!newPassword.equals(checkPassword))
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"密码和校验密码不一致");
+        User user = getById(userUpdatePasswordRequest.getId());
+        user.setPassword(newPassword);
+        return updateById(user);
     }
 }
 

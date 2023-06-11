@@ -8,6 +8,7 @@ import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.request.user.UserLoginRequest;
 import com.rq.zhiyou.model.request.user.UserRegisterRequest;
+import com.rq.zhiyou.model.request.user.UserUpdatePasswordRequest;
 import com.rq.zhiyou.model.vo.UserInfoVO;
 import com.rq.zhiyou.model.vo.UserVO;
 import com.rq.zhiyou.service.UserService;
@@ -120,8 +121,8 @@ public class UserController {
      * @return
      */
     @GetMapping("/recommend")
-    public ResultData<Page<User>> recommendUsers(long pageSize,long pageNum,HttpServletRequest request){
-        Page<User> userPage = userService.recommendUsers(pageSize, pageNum, request);
+    public ResultData<Page<User>> recommendUsers(String username,long pageSize,long pageNum,HttpServletRequest request){
+        Page<User> userPage = userService.recommendUsers(username,pageSize, pageNum, request);
         return ResultData.success(userPage);
     }
 
@@ -184,7 +185,22 @@ public class UserController {
         if (user==null)
             throw new BusinessException(StatusCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
-        int result = userService.updateUser(user,loginUser);
+        boolean result = userService.updateUser(user,loginUser);
+        return ResultData.success(result);
+    }
+
+    /**
+     * 修改密码
+     * @param userUpdatePasswordRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/update/password")
+    public ResultData<Boolean> updateUser(@RequestBody UserUpdatePasswordRequest userUpdatePasswordRequest, HttpServletRequest request){
+        if (userUpdatePasswordRequest==null)
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        User loginUser = userService.getLoginUser(request);
+        boolean result = userService.updateUserPassword(userUpdatePasswordRequest,loginUser);
         return ResultData.success(result);
     }
 

@@ -35,12 +35,34 @@ public interface FriendsService extends IService<Friends> {
     */
     boolean applyForFriends(Long formId, User loginUser, boolean status);
 
+    /***
+     * @description 好友列表
+     * @param userName
+     * @param loginUser
+     * @return java.util.List<com.rq.zhiyou.model.vo.UserVO>
+    */
+//    List<UserVO> friendsList(String userName, User loginUser);
 
-    List<UserVO> friendsList(String userName, User loginUser);
-
+    /***
+     * @description 获取消息记录 收到/申请
+     * @param loginUser
+     * @param status
+     * @return java.util.List<com.rq.zhiyou.model.vo.FriendsVO>
+    */
     List<FriendsVO> friendsRecords(User loginUser, int status);
 
+    /***
+     * @description 已读通知
+     * @param loginUser
+     * @param ids
+     * @return boolean
+    */
     boolean toRead(User loginUser, Set<Long> ids);
 
+    /***
+     * @description 获取未读通知数量
+     * @param loginUser
+     * @return long
+    */
     long getRecordCount(User loginUser);
 }

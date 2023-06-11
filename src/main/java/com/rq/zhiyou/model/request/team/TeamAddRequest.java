@@ -54,6 +54,10 @@ public class TeamAddRequest implements Serializable {
      * 密码
      */
     private String password;
+    /**
+     * 队伍公告
+     */
+    private String announce;
 
 
 }

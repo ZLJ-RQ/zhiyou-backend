@@ -11,7 +11,7 @@ public interface FriendsConstant {
      */
     int AGREE_STATUS = 1;
     /**
-     * 已过期
+     * 不同意
      */
     int NO_AGREE_STATUS = 2;
     /**

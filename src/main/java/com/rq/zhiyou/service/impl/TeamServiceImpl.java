@@ -12,10 +12,7 @@ import com.rq.zhiyou.mapper.TeamMapper;
 import com.rq.zhiyou.model.domain.Team;
 import com.rq.zhiyou.model.domain.User;
 import com.rq.zhiyou.model.domain.UserTeam;
-import com.rq.zhiyou.model.request.team.TeamJoinRequest;
-import com.rq.zhiyou.model.request.team.TeamQueryRequest;
-import com.rq.zhiyou.model.request.team.TeamQuitRequest;
-import com.rq.zhiyou.model.request.team.TeamUpdateRequest;
+import com.rq.zhiyou.model.request.team.*;
 import com.rq.zhiyou.model.enums.TeamStatusEnum;
 import com.rq.zhiyou.model.vo.UserTeamVO;
 import com.rq.zhiyou.model.vo.UserVO;
@@ -28,6 +25,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Resource;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.search.similarities.LambdaDF;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
@@ -106,10 +104,15 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (StringUtils.isBlank(name)||name.length()>20){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"队伍标题不满足要求");
         }
-//        c. 描述 <= 512
+//        c. 描述 <= 50
         String description = team.getDescription();
-        if (StringUtils.isNotBlank(description)&&description.length()>512){
+        if (StringUtils.isNotBlank(description)&&description.length()>50){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"队伍描述过长");
+        }
+        //       公告 <= 50
+        String announce = team.getAnnounce();
+        if (StringUtils.isNotBlank(announce)&&announce.length()>50){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"队伍公告过长");
         }
 //        d. status 是否公开（int）不传默认为 0（公开）
         int status = Optional.ofNullable(team.getStatus()).orElse(0);
@@ -207,6 +210,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     }
 
     @Override
+    @Transactional
     public boolean updateTeam(TeamUpdateRequest teamUpdateRequest,User loginUser) {
         if (teamUpdateRequest==null){
             throw new BusinessException(StatusCode.PARAMS_ERROR);
@@ -214,10 +218,17 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         Team updateTeam = new Team();
         BeanUtils.copyProperties(teamUpdateRequest,updateTeam);
         checkTeam(updateTeam);
-        //       公告 <= 50
-        String announce = teamUpdateRequest.getAnnounce();
-        if (StringUtils.isNotBlank(announce)&&announce.length()>50){
-            throw new BusinessException(StatusCode.PARAMS_ERROR,"队伍公告过长");
+        //        3. 校验信息
+//        a. 队伍人数 要大于当前队伍中人员数 并且不过大
+        Integer maxNum = teamUpdateRequest.getMaxNum();
+        LambdaQueryWrapper<UserTeam> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserTeam::getTeamId,teamUpdateRequest.getId());
+        long count = userTeamService.count(queryWrapper);
+        if (maxNum<count){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"队伍人数不能小于已在队伍人数");
+        }
+        if (maxNum<=1||maxNum>20){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"队伍人数不满足要求");
         }
         Long id = teamUpdateRequest.getId();
         Team oldTeam = getTeamById(id);
@@ -231,7 +242,6 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
                 throw new BusinessException(StatusCode.PARAMS_ERROR,"加密房间必须要设置密码");
             }
         }
-
         return this.updateById(updateTeam);
     }
 
@@ -404,6 +414,50 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         userTeamVO.setHasJoinNum(userVOList.size());
         userTeamVO.setTeamUserList(userVOList);
         return userTeamVO;
+    }
+
+    @Override
+    public boolean transferTeam(TeamTransferRequest teamTransferRequest, User loginUser) {
+        Long teamId = teamTransferRequest.getId();
+        if (teamId==null||teamId<=0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        Long userId = teamTransferRequest.getUserId();
+        if (userId==null||userId<=0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        //判断是否在转移队伍时候离队
+        LambdaQueryWrapper<UserTeam> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserTeam::getTeamId,teamId);
+        queryWrapper.eq(UserTeam::getUserId,userId);
+        UserTeam userTeam = userTeamService.getOne(queryWrapper);
+        if (userTeam==null){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"该用户已不在队伍内");
+        }
+        Team team = getById(teamId);
+        team.setUserId(userId);
+        return updateById(team);
+    }
+
+    @Override
+    public List<UserVO> getTeamMemberById(Long teamId, User loginUser) {
+        Team team = getById(teamId);
+        if (team.getUserId()!=loginUser.getId()){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"只有队长能操作");
+        }
+        LambdaQueryWrapper<UserTeam> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserTeam::getTeamId,teamId);
+        queryWrapper.ne(UserTeam::getUserId,loginUser.getId());
+        List<UserTeam> list = userTeamService.list(queryWrapper);
+        if (list.size()==0){
+            return new ArrayList<>();
+        }
+        return list.stream().map(userTeam -> {
+            User user = userService.getById(userTeam.getUserId());
+            UserVO userVO = BeanUtil.copyProperties(user, UserVO.class);
+            userVO.setTags("");
+            return userVO;
+        }).collect(Collectors.toList());
     }
 }
 
