@@ -55,6 +55,11 @@ public class UserTeamVO implements Serializable {
     private Long userId;
 
     /**
+     * 队伍公告
+     */
+    private String announce;
+
+    /**
      * 0 - 公开，1 - 私有，2 - 加密
      */
     private Integer status;

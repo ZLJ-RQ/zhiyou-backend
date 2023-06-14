@@ -1,5 +1,6 @@
 package com.rq.zhiyou.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,7 +51,7 @@ public class FriendsServiceImpl extends ServiceImpl<FriendsMapper, Friends>
         if (receiveId==userId){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"不能添加自己");
         }
-        if (friendsAddRequest.getRemark().length()>50){
+        if (StringUtils.isNotBlank(friendsAddRequest.getRemark())&&friendsAddRequest.getRemark().length()>50){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"备注不能超过50字");
         }
         LambdaQueryWrapper<Friends> queryWrapper = new LambdaQueryWrapper<>();
@@ -98,8 +100,11 @@ public class FriendsServiceImpl extends ServiceImpl<FriendsMapper, Friends>
         User user = userService.getById(userId);
         String friendIds = user.getFriendIds();
         Gson gson = new Gson();
-        Set<Long> idsSet = gson.fromJson(friendIds, new TypeToken<Set<String>>() {
+        Set<Long> idsSet = gson.fromJson(friendIds, new TypeToken<Set<Long>>() {
         }.getType());
+        if (CollectionUtil.isEmpty(idsSet)){
+            idsSet=new HashSet<>();
+        }
         idsSet.add(formId);
         user.setFriendIds(gson.toJson(idsSet));
         userService.updateById(user);

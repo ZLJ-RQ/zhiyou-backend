@@ -269,7 +269,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         }
         //该用户已加入的队伍数量
         long userId = loginUser.getId();
-        RLock lock = redissonClient.getLock("zhiyou:team:join");
+        RLock lock = redissonClient.getLock("zhiyou:team:join:"+userId);
         try {
             while (true){
                 boolean isLock = lock.tryLock(0, 30000L, TimeUnit.MICROSECONDS);
@@ -439,25 +439,50 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         return updateById(team);
     }
 
+//    @Override
+//    public List<UserVO> getTeamMemberById(Long teamId, User loginUser) {
+//        Team team = getById(teamId);
+//        if (team.getUserId()!=loginUser.getId()){
+//            throw new BusinessException(StatusCode.PARAMS_ERROR,"只有队长能操作");
+//        }
+//        LambdaQueryWrapper<UserTeam> queryWrapper = new LambdaQueryWrapper<>();
+//        queryWrapper.eq(UserTeam::getTeamId,teamId);
+//        queryWrapper.ne(UserTeam::getUserId,loginUser.getId());
+//        List<UserTeam> list = userTeamService.list(queryWrapper);
+//        if (list.size()==0){
+//            return new ArrayList<>();
+//        }
+//        return list.stream().map(userTeam -> {
+//            User user = userService.getById(userTeam.getUserId());
+//            UserVO userVO = BeanUtil.copyProperties(user, UserVO.class);
+//            userVO.setTags("");
+//            return userVO;
+//        }).collect(Collectors.toList());
+//    }
+
     @Override
-    public List<UserVO> getTeamMemberById(Long teamId, User loginUser) {
+    @Transactional
+    public boolean removeTeam(TeamRemoveRequest teamRemoveRequest, User loginUser) {
+        Long teamId = teamRemoveRequest.getId();
+        if (teamId==null||teamId<=0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        Long userId = teamRemoveRequest.getUserId();
+        if (userId==null||userId<=0){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
         Team team = getById(teamId);
-        if (team.getUserId()!=loginUser.getId()){
+        if (loginUser.getId()!=team.getUserId()){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"只有队长能操作");
         }
         LambdaQueryWrapper<UserTeam> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(UserTeam::getTeamId,teamId);
-        queryWrapper.ne(UserTeam::getUserId,loginUser.getId());
-        List<UserTeam> list = userTeamService.list(queryWrapper);
-        if (list.size()==0){
-            return new ArrayList<>();
+        queryWrapper.eq(UserTeam::getUserId,userId);
+        UserTeam userTeam = userTeamService.getOne(queryWrapper);
+        if (userTeam==null){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"该用户已不在队伍内");
         }
-        return list.stream().map(userTeam -> {
-            User user = userService.getById(userTeam.getUserId());
-            UserVO userVO = BeanUtil.copyProperties(user, UserVO.class);
-            userVO.setTags("");
-            return userVO;
-        }).collect(Collectors.toList());
+        return userTeamService.removeById(userTeam);
     }
 }
 

@@ -21,10 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -92,15 +89,15 @@ public class TeamController {
         return ResultData.success(userTeamVO);
     }
     //获取除队长以外成员信息
-    @GetMapping("/get/member")
-    public ResultData<List<UserVO>> getTeamMemberById(Long teamId, HttpServletRequest request){
-        if (teamId==null||teamId<=0){
-            throw new BusinessException(StatusCode.PARAMS_ERROR);
-        }
-        User loginUser = userService.getLoginUser(request);
-        List<UserVO> list= teamService.getTeamMemberById(teamId,loginUser);
-        return ResultData.success(list);
-    }
+//    @GetMapping("/get/member")
+//    public ResultData<List<UserVO>> getTeamMemberById(Long teamId, HttpServletRequest request){
+//        if (teamId==null||teamId<=0){
+//            throw new BusinessException(StatusCode.PARAMS_ERROR);
+//        }
+//        User loginUser = userService.getLoginUser(request);
+//        List<UserVO> list= teamService.getTeamMemberById(teamId,loginUser);
+//        return ResultData.success(list);
+//    }
 
     @GetMapping("/get")
     public ResultData<Team> getTeamById(Long teamId){
@@ -186,6 +183,16 @@ public class TeamController {
         return ResultData.success(result);
     }
 
+    @PostMapping("/remove")
+    public ResultData<Boolean> removeTeam(@RequestBody TeamRemoveRequest teamRemoveRequest, HttpServletRequest request){
+        if (teamRemoveRequest==null){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+        boolean result= teamService.removeTeam(teamRemoveRequest,loginUser);
+        return ResultData.success(result);
+    }
+
     @PostMapping("/transfer")
     public ResultData<Boolean> transferTeam(@RequestBody TeamTransferRequest teamTransferRequest, HttpServletRequest request){
         if (teamTransferRequest==null){
@@ -227,13 +234,22 @@ public class TeamController {
         boolean isAdmin = userService.isAdmin(request);
         User loginUser = userService.getLoginUser(request);
         QueryWrapper<UserTeam> queryWrapper = new QueryWrapper<>();
-        queryWrapper.like("user_id",loginUser.getId());
+        queryWrapper.eq("user_id",loginUser.getId());
         List<UserTeam> list = userTeamService.list(queryWrapper);
+        if (CollectionUtil.isEmpty(list)){
+            return ResultData.success(new ArrayList<>());
+        }
         //取出不重复的队伍id
-        Map<Long, List<UserTeam>> listMap = list.stream().collect(Collectors.groupingBy(UserTeam::getTeamId));
+        Set<Long> teamIdSet = list.stream().map(UserTeam::getTeamId).collect(Collectors.toSet());
+        QueryWrapper<UserTeam> teamQueryWrapper = new QueryWrapper<>();
+        teamQueryWrapper.in("team_id",teamIdSet);
+        Map<Long, List<UserTeam>> listMap = userTeamService.list(teamQueryWrapper).stream().collect(Collectors.groupingBy(UserTeam::getTeamId));
         ArrayList<Long> idList = new ArrayList<>(listMap.keySet());
         teamQueryRequest.setIdList(idList);
         List<UserTeamVO> teamList = teamService.listTeams(teamQueryRequest,isAdmin,1);
+        if (CollectionUtil.isEmpty(teamList)){
+            return ResultData.success(new ArrayList<>());
+        }
         teamList.forEach(team->{
             team.setHasJoin(true);
             team.setHasJoinNum(listMap.get(team.getId()).size());

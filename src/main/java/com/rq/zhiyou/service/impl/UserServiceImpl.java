@@ -1,6 +1,7 @@
 package com.rq.zhiyou.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -12,6 +13,7 @@ import com.rq.zhiyou.constant.UserConstant;
 import com.rq.zhiyou.exception.BusinessException;
 import com.rq.zhiyou.mapper.UserMapper;
 import com.rq.zhiyou.model.domain.User;
+import com.rq.zhiyou.model.enums.UserGenderEnum;
 import com.rq.zhiyou.model.request.user.UserUpdatePasswordRequest;
 import com.rq.zhiyou.model.vo.UserInfoVO;
 import com.rq.zhiyou.model.vo.UserVO;
@@ -23,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
@@ -88,6 +91,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user = new User();
         user.setAccount(account);
         user.setPassword(encryptPassword);
+        user.setUsername(RandomUtil.randomString(8));
+        Gson gson = new Gson();
+        List<String> tagList = new ArrayList<>();
+        tagList.add(UserGenderEnum.FEMALE.getGender());
+        user.setTags(gson.toJson(tagList));
         boolean res = this.save(user);
         if (!res)
             throw new BusinessException(StatusCode.DATABASE_OPERATION_FAIL);
@@ -273,7 +281,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (StringUtils.isNotBlank(user.getUsername())&&user.getUsername().length()>10){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"昵称不能超过10个字");
         }
-        String phoneValidPattern="/^(?:(?:\\+|00)86)?1(?:(?:3[\\d])|(?:4[5-7|9])|(?:5[0-3|5-9])|(?:6[5-7])|(?:7[0-8])|(?:8[\\d])|(?:9[1|8|9]))\\d{8}$/";
+        String phoneValidPattern="^1(3[0-9]|5[0-3,5-9]|7[1-3,5-8]|8[0-9])\\d{8}$";
         if (StringUtils.isNotBlank(user.getPhone())&& !Pattern.compile(phoneValidPattern).matcher(user.getPhone()).find()){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"手机号格式不符");
         }
@@ -291,6 +299,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (oldUser==null){
             throw new BusinessException(StatusCode.NULL_ERROR);
         }
+        if (user.getGender()!=null){
+            String tags = oldUser.getTags();
+            Gson gson = new Gson();
+            List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
+            }.getType());
+            tagList.remove(UserGenderEnum.getEnumByValue(oldUser.getGender()).getGender());
+            if (UserGenderEnum.FEMALE.getValue()==user.getGender()){
+                tagList.add(UserGenderEnum.FEMALE.getGender());
+            }else{
+                tagList.add(UserGenderEnum.MALE.getGender());
+            }
+            user.setTags(gson.toJson(tagList));
+        }
         return updateById(user);
     }
 
@@ -298,16 +319,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     public Page<User> recommendUsers(String username,long pageSize, long pageNum, HttpServletRequest request) {
         User loginUser = getLoginUser(request);
         final String RECOMMEND_KEY="zhiyou:user:recommend:"+loginUser.getId();
-        Page<User> userPage =(Page<User>) redisTemplate.opsForValue().get(RECOMMEND_KEY);
+        Page<User> userPage=null;
+        if (StringUtils.isBlank(username)){
+             userPage =(Page<User>) redisTemplate.opsForValue().get(RECOMMEND_KEY);
+        }
         if (userPage!=null) {
             return userPage;
         }
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.like(username!=null,"username",username);
+        queryWrapper.like(StringUtils.isNotBlank(username),"username",username);
         userPage = page(new Page<>(pageNum,pageSize),queryWrapper);
         userPage.setRecords(userPage.getRecords().stream().map(user -> getSafetyUser(user)).collect(Collectors.toList()));
         try {
-            redisTemplate.opsForValue().set(RECOMMEND_KEY,userPage,10, TimeUnit.MINUTES);
+            if (StringUtils.isBlank(username)) {
+                redisTemplate.opsForValue().set(RECOMMEND_KEY, userPage, 10, TimeUnit.MINUTES);
+            }
         } catch (Exception e) {
             log.error("redis set key error",e);
         }
@@ -361,7 +387,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             return new ArrayList<>();
         }
         Gson gson = new Gson();
-        Set<Long> idsSet = gson.fromJson(friendIds, new TypeToken<Set<String>>() {}.getType());
+        Set<Long> idsSet = gson.fromJson(friendIds, new TypeToken<Set<Long>>() {}.getType());
         if (CollectionUtil.isEmpty(idsSet)){
             return new ArrayList<>();
         }
@@ -375,15 +401,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
+    @Transactional
     public boolean deleteFriends(Long id, User loginUser) {
         String friendIds = loginUser.getFriendIds();
         if (StringUtils.isBlank(friendIds)){
             throw new BusinessException(StatusCode.PARAMS_ERROR);
         }
         Gson gson = new Gson();
-        Set<Long> idsSet = gson.fromJson(friendIds, new TypeToken<Set<String>>() {}.getType());
+        Set<Long> idsSet = gson.fromJson(friendIds, new TypeToken<Set<Long>>() {}.getType());
         idsSet.remove(id);
         loginUser.setFriendIds(gson.toJson(idsSet));
+        //被删除的人也删除当前用户
+        User user = getById(id);
+        String userFriendIds = user.getFriendIds();
+        if (StringUtils.isBlank(userFriendIds)){
+            throw new BusinessException(StatusCode.PARAMS_ERROR);
+        }
+        Set<Long> idsUserSet = gson.fromJson(userFriendIds, new TypeToken<Set<Long>>() {}.getType());
+        idsUserSet.remove(loginUser.getId());
+        user.setFriendIds(gson.toJson(idsUserSet));
+        updateById(user);
         return updateById(loginUser);
     }
 
@@ -393,7 +430,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         UserInfoVO userInfoVO = new UserInfoVO();
         BeanUtils.copyProperties(user,userInfoVO);
         String friendIds = loginUser.getFriendIds();
-        if (friendIds.contains(String.valueOf(id))){
+        if (StringUtils.isBlank(friendIds)){
+            return userInfoVO;
+        }
+        Gson gson = new Gson();
+        Set<Long> friendSet = gson.fromJson(friendIds, new TypeToken<Set<Long>>() {
+        }.getType());
+        if (friendSet.contains(id)){
             userInfoVO.setIsFriend(true);
         }else {
             userInfoVO.setIsFriend(false);
@@ -417,7 +460,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (!newPassword.equals(checkPassword))
             throw new BusinessException(StatusCode.PARAMS_ERROR,"密码和校验密码不一致");
         User user = getById(userUpdatePasswordRequest.getId());
-        user.setPassword(newPassword);
+        String encryptPassword = DigestUtils.md5DigestAsHex((SALT + newPassword).getBytes());
+        user.setPassword(encryptPassword);
         return updateById(user);
     }
 }

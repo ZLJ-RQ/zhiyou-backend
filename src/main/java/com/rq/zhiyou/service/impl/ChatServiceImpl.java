@@ -97,6 +97,7 @@ public class ChatServiceImpl extends ServiceImpl<ChatMapper, Chat>
         BeanUtils.copyProperties(userService.getById(userId), fromUser);
         chatVO.setSendMsgUser(fromUser);
         chatVO.setChatType(chatType);
+        chatVO.setText(text);
         chatVO.setCreateTime(DateUtil.format(LocalDateTime.now(), "yyyy年MM月dd日 HH:mm:ss"));
         if (fromUser.getId().equals(userId)) {
             chatVO.setIsMy(true);
@@ -113,7 +114,7 @@ public class ChatServiceImpl extends ServiceImpl<ChatMapper, Chat>
         WebSocketVO fromUser = new WebSocketVO();
         BeanUtils.copyProperties(userService.getById(chat.getFromId()), fromUser);
         chatVO.setSendMsgUser(fromUser);
-        chatVO.setCreateTime(DateUtil.format(LocalDateTime.now(), "yyyy年MM月dd日 HH:mm:ss"));
+        chatVO.setCreateTime(DateUtil.format(chat.getCreateTime(), "yyyy年MM月dd日 HH:mm:ss"));
         if (fromUser.getId() == userId) {
             chatVO.setIsMy(true);
         }

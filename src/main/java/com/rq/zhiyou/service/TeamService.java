@@ -56,6 +56,12 @@ public interface TeamService extends IService<Team> {
      *  转移队伍
     */
     boolean transferTeam(TeamTransferRequest teamTransferRequest, User loginUser);
-
-    List<UserVO> getTeamMemberById(Long teamId, User loginUser);
+    /**
+     *  获取队伍成员信息(除队长)
+     */
+//    List<UserVO> getTeamMemberById(Long teamId, User loginUser);
+    /**
+     *  踢出队伍
+     */
+    boolean removeTeam(TeamRemoveRequest teamRemoveRequest, User loginUser);
 }
