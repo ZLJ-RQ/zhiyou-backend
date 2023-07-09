@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rq.zhiyou.mapper.TagMapper">
+
+    <resultMap id="BaseResultMap" type="com.rq.zhiyou.model.domain.Tag">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="tagName" column="tag_name" jdbcType="VARCHAR"/>
+            <result property="parentId" column="parent_id" jdbcType="BIGINT"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="isDelete" column="is_delete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,tag_name,parent_id,
+        create_time,update_time,is_delete
+    </sql>
+
+    <select id="selectTreeNodes" resultType="com.rq.zhiyou.model.vo.TagVO">
+        with recursive t1 as(
+            select * from tag t where parent_id=#{id}
+            union
+            select t2.* from tag t2 join t1 on t1.id=t2.parent_id
+        )
+        select * from t1 order by t1.id
+    </select>
+
+</mapper>
