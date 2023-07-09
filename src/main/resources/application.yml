@@ -39,9 +39,9 @@ spring:
       max-file-size: 100MB
       max-request-size: 150MB
   redis:
-    host: 172.20.1.134
+    host: ****
     port: 6379
-    password: 123321
+    password: ****
     database: 1
   jackson:
     timeZone: Asia/Shanghai
@@ -56,8 +56,8 @@ mybatis-plus:
 # 对象存储
 cos:
   client:
-    accessKey: AKIDjHdlfOu9AuMb7VlmbBXgaMuJUO4XprlR
-    secretKey: bx4LTP4SaYInqdARTHtMfjY9VxBBxTii
-    region: ap-guangzhou
-    bucket: agriculture-1318293392
+    accessKey: ****
+    secretKey: ****
+    region: ****
+    bucket: ****
 
